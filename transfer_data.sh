@@ -17,7 +17,7 @@ if [ ! -d "$ANALYSIS_DIR" ] ; then
     echo "$ANALYSIS_DIR: not found" >&2
     exit 1
 fi
-MANAGE_FASTQS=$(which manage_fastqs.sh)
+MANAGE_FASTQS=$(which manage_fastqs.py)
 if [ ! -x "$MANAGE_FASTQS" ] ; then
     echo "manage_fastqs.py: not found" >&2
     exit 1
