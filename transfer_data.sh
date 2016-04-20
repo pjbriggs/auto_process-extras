@@ -5,7 +5,8 @@
 if [ $# -lt 2 ] || [ $# -gt 3 ] ; then
     echo Usage: $(basename $0) DEST ANALYSIS_DIR \[ PROJECT \]
     echo Transfer data from PROJECT in ANALYSIS_DIR to DEST
-    echo which can be either \"webserver\" or \"cluster\"
+    echo which can be either \"webserver\", \"cluster\" or an
+    echo arbitrary location of the form \[\[USER@\]\[HOST:\]DIR
     exit
 fi
 METHOD=$1
@@ -92,8 +93,15 @@ case $METHOD in
 	echo "Files now at $TARGETDIR"
 	;;
     *)
-	echo "Unrecognised method: $METHOD" >&2
-	exit 1
+	echo "Attempting to copy to specified location"
+	TARGETDIR=$METHOD
+	echo "Target directory: $TARGETDIR"
+	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$PROJECT -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT copy $TARGETDIR
+	if [ $? -ne 0 ] ; then
+            echo "Copying to $TARGETDIR failed" >&2
+            exit 1
+        fi
+	echo "Files now at $TARGETDIR"
 	;;
 esac
 echo Done
