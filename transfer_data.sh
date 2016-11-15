@@ -32,9 +32,15 @@ if [ ! -d "$ANALYSIS_DIR/$PROJECT" ] ; then
     exit 1
 fi
 $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT
-if [ ! -f "$ANALYSIS_DIR/metadata.info" ] ; then
-    echo "Metadata file not found for analysis dir" >&2
-    exit 1
+metadata_file=$ANALYSIS_DIR/metadata.info
+if [ ! -f "$metadata_file" ] ; then
+    echo "metadata.info file not found for analysis dir" >&2
+    metadata_file=$ANALYSIS_DIR/auto_process.info
+    if [ ! -f "$metadata_file" ] ; then
+	echo "auto_process.info file not found for analysis dir" >&2
+	exit 1
+    fi
+    echo "Falling back to auto_process.info" >&2
 fi
 SETTINGS_FILE=$(dirname $0)/site.sh
 if [ ! -f $SETTINGS_FILE ] ; then
@@ -46,8 +52,8 @@ if [ -z "$WEBDIR" ] || [ -z "$WEBURL" ] || [ -z "$CLUSTERDIR" ] ; then
     echo "Some or all required env variables not set" >&2
     exit 1
 fi
-PLATFORM=$(grep ^platform $ANALYSIS_DIR/metadata.info | cut -f2 | tr [:lower:] [:upper:])
-RUN_NUMBER=$(grep ^run_number $ANALYSIS_DIR/metadata.info | cut -f2)
+PLATFORM=$(grep ^platform $metadata_file | cut -f2 | tr [:lower:] [:upper:])
+RUN_NUMBER=$(grep ^run_number $metadata_file | cut -f2)
 DATESTAMP=$(echo $(basename $ANALYSIS_DIR) | cut -d_ -f1)
 FIND_RANDOM_BIN=$(dirname $0)/find_random_bin.sh
 case $METHOD in
