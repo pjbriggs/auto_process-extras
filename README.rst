@@ -9,6 +9,8 @@ Scripts:
  - ``transfer_data.sh``: transfer data from a project in an analysis
    directory to either a webserver or a cluster shared data area
  - ``find_random_bin.sh``: find a random empty 'bin' (i.e. subdirectory)
+ - ``run_qc.sh``: run the ``auto_process.py run_qc`` command on arbitrary
+   FASTQ files
 
 The scripts require that the ``auto_process_ngs`` software is installed.
 
