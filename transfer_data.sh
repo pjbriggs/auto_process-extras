@@ -63,7 +63,8 @@ case $METHOD in
 	    echo "$WEBDIR: top level webserver directory not found" >&2
     	    exit 1
 	fi
-	TARGETDIR=$WEBDIR/$($FIND_RANDOM_BIN $WEBDIR)
+	BIN=$($FIND_RANDOM_BIN $WEBDIR)
+	TARGETDIR=$WEBDIR/$BIN
 	if [ ! -d $TARGETDIR ] ; then
 	    echo "Failed to acquire random bin" >&2
 	    exit 1
@@ -78,9 +79,17 @@ case $METHOD in
 	cp $(dirname $MANAGE_FASTQS)/download_fastqs.py $TARGETDIR
 	if [ ! -z "$WEBREADME" ] && [ -f "$WEBREADME" ] ; then
 	    echo "Copying README file"
-	    cp "$WEBSERVER_README" $TARGETDIR
+	    cp "$WEBREADME" $TARGETDIR/README
+	    echo "Substituting template variables into README"
+	    sed -i "s,%PLATFORM%,$PLATFORM,g" $TARGETDIR/README
+	    sed -i "s,%RUN_NUMBER%,$RUN_NUMBER,g" $TARGETDIR/README
+	    sed -i "s,%DATESTAMP%,$DATESTAMP,g" $TARGETDIR/README
+	    sed -i "s,%PROJECT%,$PROJECT,g" $TARGETDIR/README
+	    sed -i "s,%WEBURL%,$WEBURL,g" $TARGETDIR/README
+	    sed -i "s,%BIN%,$BIN,g" $TARGETDIR/README
+	    sed -i "s,%TODAY%,$(date +'%A %d %B %Y'),g" $TARGETDIR/README
 	fi
-	echo "Files now at $WEBURL/$(basename $TARGETDIR)"
+	echo "Files now at $WEBURL/$BIN"
 	;;
     cluster)
 	echo "Copying $PROJECT to cluster"
