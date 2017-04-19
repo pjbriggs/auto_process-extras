@@ -4,5 +4,6 @@
 WEBDIR=/path/to/web/directory
 WEBURL=http://webserver.org/
 CLUSTERDIR=/path/to/cluster/data/directory
+WEBREADME=/path/to/generic/webserver/README
 ##
 #

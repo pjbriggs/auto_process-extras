@@ -76,6 +76,10 @@ case $METHOD in
 	fi
 	echo "Copying download_fastqs.py"
 	cp $(dirname $MANAGE_FASTQS)/download_fastqs.py $TARGETDIR
+	if [ ! -z "$WEBREADME" ] && [ -f "$WEBREADME" ] ; then
+	    echo "Copying README file"
+	    cp "$WEBSERVER_README" $TARGETDIR
+	fi
 	echo "Files now at $WEBURL/$(basename $TARGETDIR)"
 	;;
     cluster)
