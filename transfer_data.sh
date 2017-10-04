@@ -2,16 +2,21 @@
 #
 # Transfer data to webserver or cluster shared area
 #
-if [ $# -lt 2 ] || [ $# -gt 3 ] ; then
-    echo Usage: $(basename $0) DEST ANALYSIS_DIR \[ PROJECT \]
+if [ $# -lt 2 ] || [ $# -gt 4 ] ; then
+    echo Usage: $(basename $0) DEST ANALYSIS_DIR \[ PROJECT \[ FASTQ_SET \] \]
+    echo ""
     echo Transfer data from PROJECT in ANALYSIS_DIR to DEST
     echo which can be either \"webserver\", \"cluster\" or an
-    echo arbitrary location of the form \[\[USER@\]\[HOST:\]DIR
+    echo arbitrary location of the form \[\[USER@\]HOST:\]DIR
+    echo ""
+    echo Optionally specify a non default set of Fastqs to
+    echo transfer from subdir FASTQ_SET of PROJECT
     exit
 fi
 METHOD=$1
 ANALYSIS_DIR=$2
 PROJECT=$3
+FASTQ_SET=$4
 SCRATCH=/scratch/$USER
 #
 if [ ! -d "$ANALYSIS_DIR" ] ; then
@@ -27,11 +32,16 @@ if [ -z "$PROJECT" ] ; then
     $MANAGE_FASTQS $ANALYSIS_DIR
     exit
 fi
+NAME=$PROJECT
+if [ ! -z "$FASTQ_SET" ] ; then
+    FASTQ_DIR="--fastq_dir=$FASTQ_SET"
+    NAME="$NAME.$FASTQ_SET"
+fi
 if [ ! -d "$ANALYSIS_DIR/$PROJECT" ] ; then
     echo "$PROJECT: project not found" >&2
     exit 1
 fi
-$MANAGE_FASTQS $ANALYSIS_DIR $PROJECT
+$MANAGE_FASTQS $ANALYSIS_DIR $PROJECT $FASTQ_DIR
 metadata_file=$ANALYSIS_DIR/metadata.info
 if [ ! -f "$metadata_file" ] ; then
     echo "metadata.info file not found for analysis dir" >&2
@@ -42,15 +52,17 @@ if [ ! -f "$metadata_file" ] ; then
     fi
     echo "Falling back to auto_process.info" >&2
 fi
-SETTINGS_FILE=$(dirname $0)/site.sh
-if [ ! -f $SETTINGS_FILE ] ; then
-    echo "$SETTINGS_FILE: not found" >&2
-    exit 1
-fi
-. $SETTINGS_FILE
-if [ -z "$WEBDIR" ] || [ -z "$WEBURL" ] || [ -z "$CLUSTERDIR" ] ; then
-    echo "Some or all required env variables not set" >&2
-    exit 1
+if [ "$METHOD" == webserver ] || [ "$METHOD" == cluster ] ; then
+    SETTINGS_FILE=$(dirname $0)/site.sh
+    if [ ! -f $SETTINGS_FILE ] ; then
+	echo "$SETTINGS_FILE: not found" >&2
+	exit 1
+    fi
+    . $SETTINGS_FILE
+    if [ -z "$WEBDIR" ] || [ -z "$WEBURL" ] || [ -z "$CLUSTERDIR" ] ; then
+	echo "Some or all required env variables not set" >&2
+	exit 1
+    fi
 fi
 PLATFORM=$(grep ^platform $metadata_file | cut -f2 | tr [:lower:] [:upper:])
 RUN_NUMBER=$(grep ^run_number $metadata_file | cut -f2)
@@ -70,7 +82,7 @@ case $METHOD in
 	    exit 1
 	fi
 	echo "Target bin: $TARGETDIR"
-	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$PROJECT -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT copy $TARGETDIR
+	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$NAME -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT $FASTQ_DIR copy $TARGETDIR
 	if [ $? -ne 0 ] ; then
 	    echo "Copying to webserver failed" >&2
             exit 1
@@ -104,7 +116,7 @@ case $METHOD in
 	    exit 1
  	fi
 	mkdir -p $TARGETDIR
-	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$PROJECT -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT copy $TARGETDIR
+	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$NAME -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT $FASTQ_DIR copy $TARGETDIR
 	if [ $? -ne 0 ] ; then
             echo "Copying to cluster failed" >&2
             exit 1
@@ -115,7 +127,7 @@ case $METHOD in
 	echo "Attempting to copy to specified location"
 	TARGETDIR=$METHOD
 	echo "Target directory: $TARGETDIR"
-	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$PROJECT -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT copy $TARGETDIR
+	qsub -sync y -b y -j y -wd $SCRATCH -N copy.$NAME -V $MANAGE_FASTQS $ANALYSIS_DIR $PROJECT $FASTQ_DIR copy $TARGETDIR
 	if [ $? -ne 0 ] ; then
             echo "Copying to $TARGETDIR failed" >&2
             exit 1
